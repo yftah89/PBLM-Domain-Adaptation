@@ -147,7 +147,7 @@ def generator_val(x, batch_size, names, Pdict,tok,max_review_len,pivot_num):
 
 
 def train_PBLM(src,dest,pivot_num,pivot_min_st,word_vector_size,topWords,max_review_len,hidden_units_num):
-
+    names = pre.preproc(pivot_num, pivot_min_st, src, dest)
     split_dir =src+"_to_"+dest
     # gets all the train sentiment classification
     with open(split_dir+"/split/train", 'rb') as f:
@@ -163,7 +163,7 @@ def train_PBLM(src,dest,pivot_num,pivot_min_st,word_vector_size,topWords,max_rev
     tok.fit_on_texts(train + unlabeled)
     x_valid = unlabeled[:source_valid]+unlabeled[-target_valid:]
     x = unlabeled[source_valid:-target_valid]+train
-    names = pre.preproc(pivot_num, pivot_min_st, src, dest)
+    
 
     #you can reload the pivots if you want to avoid the pivot extraction
     '''
