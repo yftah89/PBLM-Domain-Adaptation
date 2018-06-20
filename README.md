@@ -1,7 +1,19 @@
 # PBLM-Domain-Adaptation
 Authors: Yftah Ziser, Roi Reichart (Technion - Israel Institute of Technology).
 
-This is a code repository used to generate the results appearing in "Pivot Based Language Modeling for Improved Neural Domain Adaptation".
+This is a code repository used to generate the results appearing in [Pivot Based Language Modeling for Improved Neural Domain Adaptation](http://www.aclweb.org/anthology/N18-1112).
+
+If you use this implementation in your article, please cite :)
+```bib
+@inproceedings{ziser2018pivot,
+  title={Pivot Based Language Modeling for Improved Neural Domain Adaptation},
+  author={Ziser, Yftah and Reichart, Roi},
+  booktitle={Proceedings of the 2018 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long Papers)},
+  volume={1},
+  pages={1241--1251},
+  year={2018}
+}
+```
 
 ## INSTALLATION
 
