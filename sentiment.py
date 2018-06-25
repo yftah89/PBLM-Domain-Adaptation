@@ -125,7 +125,7 @@ def PBLM_CNN(src,dest,pivot_num,max_review_len,embedding_vecor_length_rep,topWor
                                              "data/" + dest + "/positive.parsed")
     unlabeled = getClearList(unlabeled)
     train = getClearList(train)
-    tok = Tokenizer(nb_words=topWords, split=" ")
+    tok = Tokenizer(num_words=topWords, split=" ")
     tok.fit_on_texts(train + unlabeled)
     train_count = 800
     X_train = tok.texts_to_sequences(train)
@@ -167,7 +167,8 @@ def PBLM_CNN(src,dest,pivot_num,max_review_len,embedding_vecor_length_rep,topWor
     val_data = X_val
     test_data = X_test
     sent_model = Sequential()
-    sent_model.add(Conv1D(filters, kernel_size, border_mode='valid', activation='relu', input_shape=(max_review_len, hidden_units_num_rep)))
+
+    sent_model.add(Conv1D(filters, kernel_size, padding='valid', activation='relu', input_shape=(max_review_len, hidden_units_num_rep)))
     # we use max pooling:
     sent_model.add(GlobalMaxPooling1D())
     sent_model.add(Dense(1, activation='sigmoid'))
@@ -184,7 +185,7 @@ def PBLM_CNN(src,dest,pivot_num,max_review_len,embedding_vecor_length_rep,topWor
                                       save_weights_only=False, mode='min', period=1)
     # saving only the best model
     earlyStopping = EarlyStopping(monitor='val_loss', patience=2, mode='min')
-    sent_model.fit(train_data, Y_train, validation_data=(val_data, Y_val), nb_epoch=10, batch_size=16,callbacks=[earlyStopping,modelCheckpoint])
+    sent_model.fit(train_data, Y_train, validation_data=(val_data, Y_val), epochs=10, batch_size=16,callbacks=[earlyStopping,modelCheckpoint])
     print(sent_model.summary())
     print sent_model.get_config()
     sent_model = load_model(filename)
@@ -229,7 +230,7 @@ def PBLM_LSTM(src,dest,pivot_num,max_review_len,embedding_vecor_length_rep,topWo
     train = getClearList(train)
 
 
-    tok = Tokenizer(nb_words=topWords, split=" ")
+    tok = Tokenizer(num_words = topWords, split=" ")
     tok.fit_on_texts(train + unlabeled)
 
     X_train = tok.texts_to_sequences(train)
@@ -256,8 +257,6 @@ def PBLM_LSTM(src,dest,pivot_num,max_review_len,embedding_vecor_length_rep,topWo
 
 
     modelT.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-    print "\n\n\nmodel embd masking = ",modelT.layers[0].mask_zero
-    print "here come the freeze"
     print modelT.summary()
 
     filters = 250
@@ -265,11 +264,8 @@ def PBLM_LSTM(src,dest,pivot_num,max_review_len,embedding_vecor_length_rep,topWo
 
 
 
-    embd = Sequential()
+
     embedding_vecor_length = embedding_vecor_length_rep
-    embd.add(
-        Embedding(topWords, embedding_vecor_length, input_length=max_review_len, init='glorot_uniform', mask_zero=True))
-    print(embd.summary())
 
     LSTMlayer = LSTM(hidden_units_num,name='sentLSTM')
     sent_model = Sequential()
@@ -295,7 +291,7 @@ def PBLM_LSTM(src,dest,pivot_num,max_review_len,embedding_vecor_length_rep,topWo
 
     #stops as soon as the validation loss stops decreasing
     earlyStopping = EarlyStopping(monitor='val_loss', patience=2, mode='min')
-    sent_model.fit(train_data, Y_train, validation_data=(val_data, Y_val), nb_epoch=10, batch_size=16,callbacks=[earlyStopping,modelCheckpoint])
+    sent_model.fit(train_data, Y_train, validation_data=(val_data, Y_val), epochs=10, batch_size=16,callbacks=[earlyStopping,modelCheckpoint])
     print(sent_model.summary())
     print sent_model.get_config()
     sent_model = load_model(filename)
