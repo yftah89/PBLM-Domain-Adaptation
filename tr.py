@@ -64,12 +64,12 @@ def getClearList(sentences):
 #prepare the PBLM labels, for each word the corresponding label should be the pivot name if the next word is a pivot and
 #a NONE symbol otherwise, if the next next word is a unigram pivot and the next couple of words are bigram pivot the
 #label will be the bigram pivot, as mentioned in the article
-def makeLSTMinput(raw_sentences,direction,names ,Pdict, tok):
+def makeLSTMinput(raw_sentences,direction,names ,Pdict, id2word,pivot_num):
     lstm_labels = []
-    noPivotIndex = len(Pdict)+1
-    unigram , bigram = get_unigram_bigram(names)
-    word2id = tok.word_index
-    id2word = {idx: word for (word, idx) in word2id.items()}
+
+    noPivotIndex = pivot_num + 1
+
+
     index = 0
     for sen in raw_sentences:
         #in this code we use only the left to right PBLM, one can add a right to left PBLM if he wishes
@@ -92,9 +92,10 @@ def makeLSTMinput(raw_sentences,direction,names ,Pdict, tok):
                 if((not(bigram_found)) and (not(unigram_found))):
                     new_labels.append(noPivotIndex)
             unigram_found = False
-            if ((words[sen_len-1] in Pdict) and (not((words[sen_len-2] + " " + words[sen_len-1]) in Pdict))):
-                new_labels.append(Pdict[words[sen_len-1]])
-                unigram_found = True
+            if(sen_len>1):
+                if ((words[sen_len-1] in Pdict) and (not((words[sen_len-2] + " " + words[sen_len-1]) in Pdict))):
+                    new_labels.append(Pdict[words[sen_len-1]])
+                    unigram_found = True
             if(not(unigram_found)):
                 new_labels.append(noPivotIndex)
             new_labels.append(noPivotIndex)
@@ -108,7 +109,9 @@ def makeLSTMinput(raw_sentences,direction,names ,Pdict, tok):
 def generator(x, batch_size, names, Pdict,tok,max_review_len,pivot_num):
     index = np.arange(len(x))
     start = 0
-    noPivotIndex = len(Pdict) + 1
+    word2id = tok.word_index
+    id2word = {idx: word for (word, idx) in word2id.items()}
+    noPivotIndex = pivot_num + 1
     while True:
         if start == 0 :
             #shuffels the data every epoch
@@ -116,7 +119,7 @@ def generator(x, batch_size, names, Pdict,tok,max_review_len,pivot_num):
         batch = index[start:start + batch_size]
         x_batch = [x[ind] for ind in batch]
         #prepare the lstm labels
-        y_batch = makeLSTMinput(x_batch,"L2R",names, Pdict,tok)
+        y_batch = makeLSTMinput(x_batch,"L2R",names, Pdict,id2word,pivot_num)
         x_batch = sequence.pad_sequences(x_batch, maxlen=max_review_len)
         y_batch = sequence.pad_sequences(y_batch, maxlen=max_review_len, value = noPivotIndex)
         y_batch = np.array([to_categorical(sent_label, pivot_num + 2) for sent_label in y_batch])
@@ -130,13 +133,15 @@ def generator(x, batch_size, names, Pdict,tok,max_review_len,pivot_num):
 def generator_val(x, batch_size, names, Pdict,tok,max_review_len,pivot_num):
     index = np.arange(len(x))
     start = 0
-    noPivotIndex = len(Pdict) + 1
+    word2id = tok.word_index
+    id2word = {idx: word for (word, idx) in word2id.items()}
+    noPivotIndex = pivot_num + 1
     while True:
         if start == 0 :
             np.random.shuffle(index)
         batch = index[start:start + batch_size]
         x_batch = [x[ind] for ind in batch]
-        y_batch = makeLSTMinput(x_batch,"L2R",names, Pdict,tok)
+        y_batch = makeLSTMinput(x_batch,"L2R",names, Pdict,id2word,pivot_num)
         x_batch = sequence.pad_sequences(x_batch, maxlen=max_review_len)
         y_batch = sequence.pad_sequences(y_batch, maxlen=max_review_len,value = noPivotIndex)
         y_batch = np.array([to_categorical(sent_label, pivot_num + 2) for sent_label in y_batch])
@@ -159,7 +164,7 @@ def train_PBLM(src,dest,pivot_num,pivot_min_st,word_vector_size,topWords,max_rev
     train = getClearList(train)
     source_valid = len(source)/5
     target_valid = len(target)/5
-    tok = Tokenizer(nb_words=topWords, split=" ")
+    tok = Tokenizer(num_words = topWords, split=" ")
     tok.fit_on_texts(train + unlabeled)
     x_valid = unlabeled[:source_valid]+unlabeled[-target_valid:]
     x = unlabeled[source_valid:-target_valid]+train
@@ -179,7 +184,8 @@ def train_PBLM(src,dest,pivot_num,pivot_min_st,word_vector_size,topWords,max_rev
     #creates the model
     embedding_vecor_length = word_vector_size
     model = Sequential()
-    model.add(Embedding(topWords, embedding_vecor_length, input_length=max_review_len,init = 'glorot_uniform',mask_zero=True ))
+
+    model.add(Embedding(topWords, embedding_vecor_length, mask_zero=True, embeddings_initializer="glorot_uniform", input_length=max_review_len ))
     model.add(LSTM(hidden_units_num, return_sequences=True))
     num_class = pivot_num + 2
     model.add(TimeDistributed(Dense(num_class, activation='softmax')))
@@ -195,6 +201,6 @@ def train_PBLM(src,dest,pivot_num,pivot_min_st,word_vector_size,topWords,max_rev
     #stops the training if the validation loss has not decreased during the last 2 epochs
     earlyStopping = EarlyStopping(monitor='val_loss', patience=2, mode='min')
     model.fit_generator(generator(X_train, 16, names, Pdict,tok,max_review_len,pivot_num),
-                        samples_per_epoch=len(X_train), nb_epoch=10, validation_data =
-                        generator_val(X_test, 16, names, Pdict,tok,max_review_len,pivot_num),nb_val_samples=len(X_test)
+                        steps_per_epoch=(len(X_train)/16), epochs=10, validation_data =
+                        generator_val(X_test, 16, names, Pdict,tok,max_review_len,pivot_num),validation_steps=(len(X_test)/16)
                         ,callbacks=[earlyStopping,modelCheckpoint])
