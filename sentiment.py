@@ -25,7 +25,6 @@ from keras.models import load_model
 import numpy as np
 from keras.models import load_model
 from keras.models import Model
-from keras.layers import Merge
 from keras.callbacks import EarlyStopping
 from keras.callbacks import ModelCheckpoint
 np.random.seed(7)
