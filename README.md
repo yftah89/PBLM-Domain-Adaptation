@@ -25,7 +25,7 @@ numpy
 
 scipy
 
-Theano
+Theano/tensorflow
 
 keras
 
