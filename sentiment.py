@@ -158,7 +158,7 @@ def PBLM_CNN(src,dest,pivot_num,max_review_len,embedding_vecor_length_rep,topWor
     #reshaping the input for the CNN network
     X_train = X_train.reshape(X_train.shape[0], max_review_len, hidden_units_num_rep)
     X_test = X_test.reshape(X_test.shape[0], max_review_len, hidden_units_num_rep)
-    X_train = X_train.reshape(X_train.shape[0], max_review_len, hidden_units_num_rep)
+    X_val = X_val.reshape(X_val.shape[0], max_review_len, hidden_units_num_rep)
 
 
 
