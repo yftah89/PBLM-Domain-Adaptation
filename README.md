@@ -78,7 +78,7 @@ if __name__ == '__main__':
     # of the model under the results directory in the "cnn" dir
     sentiment.PBLM_CNN(domain[0], domain[1], 500, 500, 256, 10000, 256, 250, 3)
 
-    # training the sentiment cnn using PBLM's representation
+    # training the sentiment LSTM using PBLM's representation
     # shared representation for both source domain and target domain
     # this phase needs a corresponding trained PBLM model in order to work
     # first param: the source domain
