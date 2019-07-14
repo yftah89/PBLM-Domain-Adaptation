@@ -95,12 +95,7 @@ def preproc(pivot_num,pivot_min_st,src,dest):
     filename =  "split/"+src + "_to_" + dest+"/split"
     if not os.path.exists(os.path.dirname(filename)):
         #gets all the train and test for sentiment classification
-        train, train_target, test, test_target = extract_and_split("data/"+src+"/negative.parsed","data/"+src+"/positive.parsed")
-        os.makedirs(os.path.dirname(filename))
-        with open(filename + "/train", 'wb') as f:
-            pickle.dump(train, f)
-        with open(filename + "/train_target", 'wb') as f:
-            pickle.load(train_target, f)
+        train, train_target, test, test_target = extract_and_split("yftah/"+src+"/negative.parsed","yftah/"+src+"/positive.parsed")
     else:
         with open(filename+"/train", 'rb') as f:
             train = pickle.load(f)
@@ -114,7 +109,7 @@ def preproc(pivot_num,pivot_min_st,src,dest):
     X_2_train = bigram_vectorizer.fit_transform(train).toarray()
 
     # gets all the train and test for pivot classification
-    unlabeled,source,target=XML2arrayRAW("data/"+src+"/"+src+"UN.txt","data/"+dest+"/"+dest+"UN.txt")
+    unlabeled,source,target=XML2arrayRAW("yftah/"+src+"/"+src+"UN.txt","yftah/"+dest+"/"+dest+"UN.txt")
     source=source+train
     src_count = 20
     un_count = 40
@@ -134,8 +129,7 @@ def preproc(pivot_num,pivot_min_st,src,dest):
 
     MIsorted,RMI,sen=GetTopNMI(2000,CountVectorizer,X_2_train,train_target)
     MIsorted.reverse()
-    pivots_meta = dict()
-
+    pivots_meta = []
     c=0
     i=0
 
@@ -146,11 +140,11 @@ def preproc(pivot_num,pivot_min_st,src,dest):
         t_count = getCounts(X_2_train_target, bigram_vectorizer_target.get_feature_names().index(name)) if name in bigram_vectorizer_target.get_feature_names() else 0
         if(s_count>=pivot_min_st and t_count>=pivot_min_st):
             names.append(name)
-            #pivots_meta.append((sen[MIsorted[i]],RMI[MIsorted[i]],s_count,t_count))
-            pivots_meta[name] = (sen[MIsorted[i]],RMI[MIsorted[i]],s_count,t_count)
+            pivots_meta.append((sen[MIsorted[i]],RMI[MIsorted[i]],s_count,t_count))
             pivotsCounts.append(bigram_vectorizer_unlabeled.get_feature_names().index(name))
             c+=1
-            print "feature is ",name," it MI is ",RMI[MIsorted[i]]," sen ",sen[MIsorted[i]]," in source ",s_count," in target ",t_count
+            #if(c<200):
+                #print "feature is ",name," it MI is ",RMI[MIsorted[i]]," sen ",sen[MIsorted[i]]," in source ",s_count," in target ",t_count
         i+=1
     filename =src + "_to_" + dest + "/pivots/"+str(pivot_num)
     if not os.path.exists(os.path.dirname(filename)):
@@ -160,5 +154,5 @@ def preproc(pivot_num,pivot_min_st,src,dest):
         pickle.dump(names, f)
     with open(src + "_to_" + dest + "/pivots/"+str(pivot_num)+"_meta", 'wb') as f:
         pickle.dump(pivots_meta, f)
-    return names,len(source),len(target)
+    return names
 
